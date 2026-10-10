@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>국소배기장치 필요환기량 계산기</title>
+<style>
+:root{--ink:#183044;--blue:#1769aa;--pale:#eef6fb;--line:#d5e1e8;--warn:#fff4dc;--green:#eaf7ef}
+*{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:#20313c;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}
+header{background:linear-gradient(120deg,#12364b,#1769aa);color:white;padding:24px 18px}header h1{margin:0 0 7px;font-size:1.4rem}header p{margin:0;opacity:.92;font-size:.94rem}
+main{max-width:900px;margin:18px auto;padding:0 14px 34px}.card{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 3px 12px #193b4c0b}
+h2{font-size:1.1rem;margin:0 0 14px;color:var(--ink)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+label{display:block;font-weight:650;font-size:.92rem;margin-bottom:5px}input,select{width:100%;padding:11px 10px;border:1px solid #bdccd5;border-radius:9px;background:#fff;color:#20313c;font-size:1rem}
+small,.hint{font-size:.84rem;color:#526773}button{border:0;border-radius:10px;padding:12px 16px;font-size:1rem;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:white;width:100%;margin-top:16px}
+.hidden{display:none!important}.result{background:var(--green);border:1px solid #b8dfc5;border-radius:12px;padding:16px;margin-top:14px}.result strong.big{font-size:1.5rem;color:#145b32;display:block}
+.formula{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f1f5f7;padding:10px;border-radius:8px;overflow-wrap:anywhere}
+.warning{background:var(--warn);border:1px solid #efd99c;border-radius:10px;padding:12px;font-size:.9rem}.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.pill{background:var(--pale);border-radius:999px;padding:5px 10px;font-size:.82rem}
+footer{font-size:.82rem;color:#61717a;padding:0 4px 20px}@media(max-width:560px){.grid{grid-template-columns:1fr}header h1{font-size:1.23rem}.card{padding:14px}}
+</style>
+</head>
+<body>
+<header><h1>국소배기장치 필요환기량 계산기</h1><p>치수 입력 단위: cm · 계산 결과: m³/s, m³/min, m³/h</p></header>
+<main>
+<section class="card">
+<h2>1. 후드 종류</h2>
+<div class="grid">
+<div><label for="hood">대분류</label><select id="hood"><option value="booth">부스식 후드</option><option value="external">외부식 후드</option><option value="canopy">캐노피형 후드</option></select></div>
+<div id="subWrap" class="hidden"><label for="subtype">외부식 세부 유형</label><select id="subtype"><option value="plain">일반형</option><option value="flanged">플랜지 부착 일반형</option><option value="slot">슬롯형</option><option value="flangedSlot">플랜지 부착 슬롯형</option></select></div>
+</div></section>
+
+<section class="card">
+<h2>2. 설계조건 입력</h2>
+<div id="boothFields" class="grid">
+<div><label for="bshape">개구부 형상</label><select id="bshape"><option value="rect">직사각형</option><option value="circle">원형</option></select></div>
+<div id="bwWrap"><label for="bw">개구부 가로 W (cm)</label><input id="bw" type="number" min="0" step="any" value="120"></div>
+<div id="bhWrap"><label for="bh">개구부 세로 H (cm)</label><input id="bh" type="number" min="0" step="any" value="80"></div>
+<div id="bdWrap" class="hidden"><label for="bd">개구부 지름 D (cm)</label><input id="bd" type="number" min="0" step="any" value="60"></div>
+<div><label for="bv">개구면 평균 유입풍속 V (m/s)</label><input id="bv" type="number" min="0" step="any" value="0.5"></div>
+</div>
+
+<div id="externalFields" class="hidden">
+<div class="grid">
+<div><label for="eshape">후드 개구부 형상</label><select id="eshape"><option value="rect">직사각형</option><option value="circle">원형</option><option value="slot">슬롯(긴 직사각형)</option></select></div>
+<div><label for="x">오염원-후드 거리 X (cm)</label><input id="x" type="number" min="0" step="any" value="30"></div>
+<div><label for="vc">오염원 위치 제어풍속 Vc (m/s)</label><input id="vc" type="number" min="0" step="any" value="0.5"></div>
+<div id="ewWrap"><label for="ew">개구부 가로 W (cm)</label><input id="ew" type="number" min="0" step="any" value="40"></div>
+<div id="ehWrap"><label for="eh">개구부 세로 H (cm)</label><input id="eh" type="number" min="0" step="any" value="30"></div>
+<div id="edWrap" class="hidden"><label for="ed">개구부 지름 D (cm)</label><input id="ed" type="number" min="0" step="any" value="40"></div>
+<div id="swWrap" class="hidden"><label for="sw">슬롯 폭 B (cm)</label><input id="sw" type="number" min="0" step="any" value="5"></div>
+<div id="slWrap" class="hidden"><label for="sl">슬롯 길이 L (cm)</label><input id="sl" type="number" min="0" step="any" value="60"></div>
+</div>
+<p class="hint">외부식 후드는 선택한 형상과 플랜지 유무에 따라 경험식이 달라집니다. 형상과 치수는 cm로 입력하며, 계산 시 m로 자동 변환합니다.</p>
+</div>
+
+<div id="canopyFields" class="hidden">
+<div class="grid">
+<div><label for="cshape">후드 형상</label><select id="cshape"><option value="rect">직사각형</option><option value="circle">원형</option></select></div>
+<div id="cwWrap"><label for="cw">후드 가로 W (cm)</label><input id="cw" type="number" min="0" step="any" value="100"></div>
+<div id="chWrap"><label for="ch">후드 세로 H (cm)</label><input id="ch" type="number" min="0" step="any" value="80"></div>
+<div id="cdWrap" class="hidden"><label for="cd">후드 지름 D (cm)</label><input id="cd" type="number" min="0" step="any" value="100"></div>
+<div><label for="cv">기준풍속 (m/s)</label><input id="cv" type="number" min="0" step="any" value="0.5"></div>
+<div><label for="cx">열원-후드 높이 (cm, 참고용)</label><input id="cx" type="number" min="0" step="any" value="80"></div>
+</div></div>
+
+<button class="primary" id="calc">필요환기량 계산</button><div id="output" aria-live="polite"></div>
+</section>
+
+<section class="card"><h2>3. 공식 및 주의사항</h2>
+<div class="pills"><span class="pill">치수 cm 입력</span><span class="pill">면적 자동 계산</span><span class="pill">원형 후드 지원</span></div>
+<p><b>부스식(개구면 유입 기준)</b></p><div class="formula">Q = V × A</div>
+<p>직사각형: A = (W/100) × (H/100) · 원형: A = π × (D/200)²</p>
+<p><b>외부식 후드</b></p><p>일반형·플랜지형·슬롯형은 형상별 경험식과 계수가 다릅니다. 현재 버전은 입력 치수와 면적은 처리하지만, 검증되지 않은 공식을 적용해 환기량을 임의로 산출하지 않습니다.</p>
+<p><b>캐노피형</b></p><p>열상승기류, 오염원 특성, 후드 높이 및 주변 횡기류를 고려해야 합니다. 화면의 결과는 입력한 기준풍속에 따른 단순 개구면 유량 참고값입니다.</p>
+<div class="warning"><b>설계 유의사항</b><br>학습용 계산기입니다. 실제 설계 전에는 교재 또는 신뢰할 수 있는 설계기준에서 후드별 공식·계수·적용범위를 확인하십시오. 필요환기량 외에도 덕트 반송속도, 압력손실, 송풍기 선정 및 현장 제어풍속을 검토해야 합니다.</div>
+</section><footer>오프라인 실행 가능 · 입력값은 서버로 전송되지 않습니다.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function toggle(id,on){$(id).classList.toggle('hidden',!on)}
+function showFields(){
+ const t=$('hood').value;toggle('subWrap',t==='external');toggle('boothFields',t==='booth');toggle('externalFields',t==='external');toggle('canopyFields',t==='canopy');
+ showBoothShape();showExternalShape();showCanopyShape();$('output').innerHTML='';
+}
+function showBoothShape(){const c=$('bshape').value==='circle';toggle('bwWrap',!c);toggle('bhWrap',!c);toggle('bdWrap',c)}
+function showExternalShape(){
+ const s=$('eshape').value,slot=s==='slot',circle=s==='circle';
+ toggle('ewWrap',!slot&&!circle);toggle('ehWrap',!slot&&!circle);toggle('edWrap',circle);toggle('swWrap',slot);toggle('slWrap',slot);
+}
+function showCanopyShape(){const c=$('cshape').value==='circle';toggle('cwWrap',!c);toggle('chWrap',!c);toggle('cdWrap',c)}
+function n(id){return Number($(id).value)}
+function valid(a){return a.every(v=>Number.isFinite(v)&&v>0)}
+function areaRect(wcm,hcm){return (wcm/100)*(hcm/100)}
+function areaCircle(dcm){return Math.PI*Math.pow(dcm/200,2)}
+function render(q,formula,detail,note=''){
+ if(!Number.isFinite(q)||q<=0){$('output').innerHTML='<div class="warning">필수 입력란에 0보다 큰 숫자를 입력해 주세요.</div>';return}
+ $('output').innerHTML=`<div class="result"><span>필요환기량</span><strong class="big">${(q*60).toFixed(2)} CMM</strong><span>(m³/min)</span><hr><b>적용식</b><div class="formula">${formula}</div><p>${detail}</p>${note?`<div class="warning">${note}</div>`:''}</div>`;
+}
+$('hood').addEventListener('change',showFields);
+$('bshape').addEventListener('change',showBoothShape);
+$('eshape').addEventListener('change',showExternalShape);
+$('cshape').addEventListener('change',showCanopyShape);
+$('calc').addEventListener('click',()=>{
+ const t=$('hood').value;
+ if(t==='booth'){
+  const shape=$('bshape').value,v=n('bv');let a,detail,formula;
+  if(shape==='circle'){const d=n('bd');if(!valid([d,v]))return render(NaN);a=areaCircle(d);formula='Q = V × A, A = π × (D/200)²';detail=`원형 개구면적 A = π × (${d}/200)² = ${a.toFixed(5)} m². Q = ${v} × ${a.toFixed(5)} = ${(v*a).toFixed(5)} m³/s.`}
+  else{const w=n('bw'),h=n('bh');if(!valid([w,h,v]))return render(NaN);a=areaRect(w,h);formula='Q = V × A, A = (W/100) × (H/100)';detail=`직사각형 개구면적 A = (${w}/100) × (${h}/100) = ${a.toFixed(5)} m². Q = ${v} × ${a.toFixed(5)} = ${(v*a).toFixed(5)} m³/s.`}
+  render(v*a,formula,detail,'입력한 풍속은 개구면 평균 유입풍속입니다. 실제 설계풍속은 오염물질과 공정 조건에 맞춰 선정해야 합니다.');
+ }else if(t==='canopy'){
+  const shape=$('cshape').value,v=n('cv'),x=n('cx');let a,detail,formula;
+  if(shape==='circle'){const d=n('cd');if(!valid([d,v,x]))return render(NaN);a=areaCircle(d);formula='Q참고 = V × A, A = π × (D/200)²';detail=`원형 면적 A = ${a.toFixed(5)} m², 기준유량 = ${v} × ${a.toFixed(5)} = ${(v*a).toFixed(5)} m³/s. 열원-후드 높이 ${x} cm.`}
+  else{const w=n('cw'),h=n('ch');if(!valid([w,h,v,x]))return render(NaN);a=areaRect(w,h);formula='Q참고 = V × A, A = (W/100) × (H/100)';detail=`직사각형 면적 A = ${a.toFixed(5)} m², 기준유량 = ${v} × ${a.toFixed(5)} = ${(v*a).toFixed(5)} m³/s. 열원-후드 높이 ${x} cm.`}
+  render(v*a,formula,detail,'캐노피 후드의 최종 설계 필요환기량이 아닙니다. 열상승기류 및 오염물질 발생 특성을 반영하는 설계식을 별도로 적용해야 합니다.');
+ }else{
+  const sub=$('subtype').value,shape=$('eshape').value,x=n('x'),vc=n('vc');let a,desc;
+  if(shape==='circle'){const d=n('ed');if(!valid([d,x,vc]))return render(NaN);a=areaCircle(d);desc=`원형 개구면적 A = π × (${d}/200)² = ${a.toFixed(5)} m²`}
+  else if(shape==='slot'){const b=n('sw'),l=n('sl');if(!valid([b,l,x,vc]))return render(NaN);a=areaRect(b,l);desc=`슬롯 면적 A = (${b}/100) × (${l}/100) = ${a.toFixed(5)} m²`}
+  else{const w=n('ew'),h=n('eh');if(!valid([w,h,x,vc]))return render(NaN);a=areaRect(w,h);desc=`직사각형 개구면적 A = (${w}/100) × (${h}/100) = ${a.toFixed(5)} m²`}
+  const names={plain:'외부식 일반형',flanged:'외부식 플랜지 부착 일반형',slot:'외부식 슬롯형',flangedSlot:'외부식 플랜지 부착 슬롯형'};
+  $('output').innerHTML=`<div class="warning"><b>${names[sub]}: 공식 확인 필요</b><p>${desc}.</p><p>제어거리 X = ${x} cm, 목표 제어풍속 Vc = ${vc} m/s.</p><p>후드 형상별 경험식과 계수의 적용 기준을 확인한 후 계산식을 연결해야 합니다. 확인되지 않은 공식을 적용해 필요환기량을 임의 산출하지 않았습니다.</p></div>`;
+ }
+});
+showFields();
+</script>
+</body></html>
